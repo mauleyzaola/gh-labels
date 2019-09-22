@@ -73,7 +73,6 @@ func main() {
 	log.Printf("[INFO] creating target labels: %s/%s\n", targetAuthor, targetRepo)
 	for _, v := range sourceLabels {
 		log.Println("[INFO] creating target label: ", v.Name)
-		//v.Id=0
 		if err = apiClient.LabelPost(targetAuthor, targetRepo, &v); err != nil {
 			log.Println("[ERROR]: ", err)
 			return
