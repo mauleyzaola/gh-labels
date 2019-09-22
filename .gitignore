@@ -10,3 +10,9 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# unix binary
+gh-labels
+
+# IDE files
+.idea
