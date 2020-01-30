@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 )
 
 func init() {
@@ -12,32 +13,23 @@ func init() {
 }
 
 func main() {
-	var sourceAuthor, targetAuthor string
-	var sourceRepo, targetRepo string
+	var sourceAuthor, targetAuthor, sourceRepo, targetRepo string
+	var source, target string
 
-	flag.StringVar(&sourceAuthor, "source-author", "", "name of source author")
-	flag.StringVar(&targetAuthor, "target-author", "", "name of target author")
-	flag.StringVar(&sourceRepo, "source-repo", "", "name of source repository")
-	flag.StringVar(&targetRepo, "target-repo", "", "name of target repository")
+	flag.StringVar(&source, "source", "", "source for labels in the format <owner/repository-name>")
+	flag.StringVar(&target, "target", "", "target for labels in the format <owner/repository-name>")
 	flag.Parse()
 
-	if sourceRepo == "" {
-		log.Println("[ERROR] missing parameter: source-repo")
+	if values := strings.Split(source, "/"); len(values) == 2 {
+		sourceAuthor, sourceRepo = values[0], values[1]
+	} else {
+		log.Println("[ERROR] wrong or missing parameter: source. should be <owner/repo>")
 		return
 	}
-
-	if targetRepo == "" {
-		log.Println("[ERROR] missing parameter: target-repo")
-		return
-	}
-
-	if targetAuthor == "" {
-		log.Println("[ERROR] missing parameter: source-author")
-		return
-	}
-
-	if targetAuthor == "" {
-		log.Println("[ERROR] missing parameter: target-author")
+	if values := strings.Split(target, "/"); len(values) == 2 {
+		targetAuthor, targetRepo = values[0], values[1]
+	} else {
+		log.Println("[ERROR] wrong or missing parameter: target. should be <owner/repo>")
 		return
 	}
 

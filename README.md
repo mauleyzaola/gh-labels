@@ -40,10 +40,8 @@ Example: Cloning the labels from https://github.com/facebook/react to https://gi
 
 ```
 TOKEN=708d25ca4ada98869528b6ab17933ca5c4c40dce gh-labels \
-    -source-author facebook \
-    -source-repo react \
-    -target-author mauleyzaola \
-    -target-repo garbage
+    -source facebook/react \
+    -target mauleyzaola/garbage
 ```
 
 Here is asciinema recording of the output: https://asciinema.org/a/9wsdKLCEoIZg0Pj4Y9iNZaCef
