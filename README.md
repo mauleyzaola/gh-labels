@@ -2,6 +2,9 @@
 
 Simple utility to copy labels from one GH repo to another
 
+![demo](https://github.com/user-attachments/assets/7aa943be-f355-477a-8184-b3f4da57ff82)
+
+
 Works like this:
 
 * Reads all the labels from the *source* repository
