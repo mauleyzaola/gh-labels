@@ -2,11 +2,14 @@ package main
 
 import (
 	"flag"
-	"github.com/mauleyzaola/gh-labels/internal/api"
-	"github.com/mauleyzaola/gh-labels/internal/cli"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/mauleyzaola/gh-labels/internal/types"
+
+	"github.com/mauleyzaola/gh-labels/internal/api"
+	"github.com/mauleyzaola/gh-labels/internal/cli"
 )
 
 func init() {
@@ -35,12 +38,20 @@ func main() {
 		return
 	}
 
-	apiClient, err := api.NewAPIClient(nil)
+	client, err := api.New(os.Getenv("TOKEN"))
 	if err != nil {
 		log.Println("[ERROR]: ", err)
 		return
 	}
-	if err = cli.CopyLabels(apiClient, sourceAuthor, sourceRepo, targetAuthor, targetRepo); err != nil {
+	src := types.RepoInfo{
+		Repository: sourceRepo,
+		Username:   sourceAuthor,
+	}
+	dst := types.RepoInfo{
+		Repository: targetRepo,
+		Username:   targetAuthor,
+	}
+	if err = cli.CopyLabels(client, src, dst); err != nil {
 		log.Println("[ERROR]: ", err)
 	}
 }

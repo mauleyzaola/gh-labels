@@ -3,139 +3,89 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
-	"time"
-)
 
-const (
-	GHBaseURL = "https://api.github.com"
+	"github.com/mauleyzaola/gh-labels/internal/types"
 )
 
 type Client struct {
-	baseURL string
-	client  *http.Client
-	token   string
+	client *http.Client
+	token  string
 }
 
-func NewAPIClient(timeout *time.Duration) (*Client, error) {
-	token := os.Getenv("TOKEN")
-	if token == "" {
-		return nil, errors.New("cannot resolve environment variable: TOKEN")
-	}
+func New(token string) (*Client, error) {
 	return &Client{
-		baseURL: GHBaseURL,
-		client:  NewHTTPClient(timeout),
-		token:   token,
+		client: &http.Client{},
+		token:  token,
 	}, nil
 }
 
-func NewHTTPClient(timeout *time.Duration) *http.Client {
-	if timeout != nil {
-		return &http.Client{
-			Timeout: *timeout,
-		}
-	} else {
-		return &http.Client{
-			Timeout: time.Second * 30,
-		}
+func (x *Client) genResponse(method, endpoint string, payload []byte, statusCode int) (*http.Response, error) {
+	const baseUrl = "https://api.github.com"
+	var body io.Reader
+	if payload != nil {
+		body = bytes.NewReader(payload)
 	}
-}
-
-func (ac *Client) setAuthHeader(req *http.Request) {
-	req.Header.Set("Authorization", "token "+ac.token)
-}
-
-func (ac *Client) createResponse(req *http.Request) (*http.Response, error) {
-	ac.setAuthHeader(req)
-	res, err := ac.client.Do(req)
+	uri := baseUrl + "/" + endpoint
+	req, err := http.NewRequest(method, uri, body)
+	if err != nil {
+		log.Println("[ERROR]", err)
+		return nil, err
+	}
+	req.Header.Set("Authorization", "token "+x.token)
+	req.Header.Set("Content-Type", "application/json")
+	res, err := x.client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+	if expected, actual := statusCode, res.StatusCode; expected != actual {
+		return nil, fmt.Errorf("unexpected response status code: expected %d, actual %d", expected, actual)
 	}
 	return res, nil
 }
 
-func (ac *Client) debugBody(res *http.Response) {
-	data, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return
-	}
-	log.Println(string(data))
-}
-
-// List returns all the labels from a given repository
-func (ac *Client) LabelList(username, repository string) ([]Label, error) {
-	address := fmt.Sprintf("%s/repos/%s/%s/labels", ac.baseURL, username, repository)
-	uri, err := url.Parse(address)
+func (x *Client) List(info types.RepoInfo) ([]types.Label, error) {
+	res, err := x.genResponse(http.MethodGet,
+		"repos/"+info.Username+"/"+info.Repository+"/labels",
+		nil, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(http.MethodGet, uri.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var result []Label
-	res, err := ac.createResponse(req)
-	if err != nil {
-		return nil, err
-	}
+	var result []types.Label
+	defer func() { _ = res.Body.Close() }()
 	if err = json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (ac *Client) LabelPost(username, repository string, label *Label) error {
-	if label == nil {
-		return errors.New("nil parameter: label")
-	}
-
-	address := fmt.Sprintf("%s/repos/%s/%s/labels", ac.baseURL, username, repository)
-	data, err := json.Marshal(label)
+func (x *Client) Create(dst types.RepoInfo, label types.Label) error {
+	payload, err := json.Marshal(label)
 	if err != nil {
 		return err
 	}
-	body := bytes.NewBuffer(data)
-	req, err := http.NewRequest(http.MethodPost, address, body)
+	res, err := x.genResponse(http.MethodPost,
+		"repos/"+dst.Username+"/"+dst.Repository+"/labels",
+		payload, http.StatusCreated)
 	if err != nil {
 		return err
 	}
-	res, err := ac.createResponse(req)
-	if err != nil {
-		return err
-	}
-	if expected, actual := http.StatusCreated, res.StatusCode; expected != actual {
-		ac.debugBody(res)
-		return fmt.Errorf("expected status code:%d got: %d", expected, actual)
-	}
+	defer func() { _ = res.Body.Close() }()
 
 	// TODO: report this bug to GH, description is not getting there
-	return json.NewDecoder(res.Body).Decode(label)
+	return json.NewDecoder(res.Body).Decode(&label)
 }
 
-func (ac *Client) LabelDelete(username, repository, labelName string) error {
-	address := fmt.Sprintf("%s/repos/%s/%s/labels/%s", ac.baseURL, username, repository, labelName)
-	uri, err := url.Parse(address)
+func (x *Client) Delete(dst types.RepoInfo, labelName string) error {
+	res, err := x.genResponse(http.MethodDelete,
+		"repos/"+dst.Username+"/"+dst.Repository+"/labels/"+labelName,
+		nil, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodDelete, uri.String(), nil)
-	if err != nil {
-		return err
-	}
-	res, err := ac.createResponse(req)
-	if err != nil {
-		return err
-	}
-	if expected, actual := http.StatusNoContent, res.StatusCode; expected != actual {
-		ac.debugBody(res)
-		return fmt.Errorf("expected status code:%d got: %d", expected, actual)
-	}
+	defer func() { _ = res.Body.Close() }()
 	return nil
 }
