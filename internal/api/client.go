@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -13,14 +13,22 @@ import (
 	"time"
 )
 
-// based on GH documentation: https://developer.github.com/v3/issues/labels/
+const (
+	GHBaseURL = "https://api.github.com"
+)
 
-func NewAPIClient(timeout *time.Duration) (*APIClient, error) {
+type Client struct {
+	baseURL string
+	client  *http.Client
+	token   string
+}
+
+func NewAPIClient(timeout *time.Duration) (*Client, error) {
 	token := os.Getenv("TOKEN")
 	if token == "" {
 		return nil, errors.New("cannot resolve environment variable: TOKEN")
 	}
-	return &APIClient{
+	return &Client{
 		baseURL: GHBaseURL,
 		client:  NewHTTPClient(timeout),
 		token:   token,
@@ -39,11 +47,11 @@ func NewHTTPClient(timeout *time.Duration) *http.Client {
 	}
 }
 
-func (ac *APIClient) setAuthHeader(req *http.Request) {
+func (ac *Client) setAuthHeader(req *http.Request) {
 	req.Header.Set("Authorization", "token "+ac.token)
 }
 
-func (ac *APIClient) createResponse(req *http.Request) (*http.Response, error) {
+func (ac *Client) createResponse(req *http.Request) (*http.Response, error) {
 	ac.setAuthHeader(req)
 	res, err := ac.client.Do(req)
 	if err != nil {
@@ -52,7 +60,7 @@ func (ac *APIClient) createResponse(req *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
-func (ac *APIClient) debugBody(res *http.Response) {
+func (ac *Client) debugBody(res *http.Response) {
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return
@@ -61,7 +69,7 @@ func (ac *APIClient) debugBody(res *http.Response) {
 }
 
 // List returns all the labels from a given repository
-func (ac *APIClient) LabelList(username, repository string) ([]Label, error) {
+func (ac *Client) LabelList(username, repository string) ([]Label, error) {
 	address := fmt.Sprintf("%s/repos/%s/%s/labels", ac.baseURL, username, repository)
 	uri, err := url.Parse(address)
 	if err != nil {
@@ -83,7 +91,7 @@ func (ac *APIClient) LabelList(username, repository string) ([]Label, error) {
 	return result, nil
 }
 
-func (ac *APIClient) LabelPost(username, repository string, label *Label) error {
+func (ac *Client) LabelPost(username, repository string, label *Label) error {
 	if label == nil {
 		return errors.New("nil parameter: label")
 	}
@@ -111,7 +119,7 @@ func (ac *APIClient) LabelPost(username, repository string, label *Label) error 
 	return json.NewDecoder(res.Body).Decode(label)
 }
 
-func (ac *APIClient) LabelDelete(username, repository, labelName string) error {
+func (ac *Client) LabelDelete(username, repository, labelName string) error {
 	address := fmt.Sprintf("%s/repos/%s/%s/labels/%s", ac.baseURL, username, repository, labelName)
 	uri, err := url.Parse(address)
 	if err != nil {

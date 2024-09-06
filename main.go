@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/mauleyzaola/gh-labels/internal/api"
+	"github.com/mauleyzaola/gh-labels/internal/cli"
 	"log"
 	"os"
 	"strings"
@@ -33,42 +35,12 @@ func main() {
 		return
 	}
 
-	apiClient, err := NewAPIClient(nil)
+	apiClient, err := api.NewAPIClient(nil)
 	if err != nil {
 		log.Println("[ERROR]: ", err)
 		return
 	}
-
-	log.Printf("[INFO] getting a list of source labels: %s%s\n", sourceAuthor, sourceRepo)
-	sourceLabels, err := apiClient.LabelList(sourceAuthor, sourceRepo)
-	if err != nil {
+	if err = cli.CopyLabels(apiClient, sourceAuthor, sourceRepo, targetAuthor, targetRepo); err != nil {
 		log.Println("[ERROR]: ", err)
-		return
 	}
-
-	log.Printf("[INFO] getting a list of target labels: %s/%s\n", targetAuthor, targetRepo)
-	targetLabels, err := apiClient.LabelList(targetAuthor, targetRepo)
-	if err != nil {
-		log.Println("[ERROR]: ", err)
-		return
-	}
-
-	log.Printf("[INFO] removing target labels: %s/%s\n", targetAuthor, targetRepo)
-	for _, v := range targetLabels {
-		log.Println("[INFO] removing target label: ", v.Name)
-		if err = apiClient.LabelDelete(targetAuthor, targetRepo, v.Name); err != nil {
-			log.Println("[ERROR]: ", err)
-			return
-		}
-	}
-
-	log.Printf("[INFO] creating target labels: %s/%s\n", targetAuthor, targetRepo)
-	for _, v := range sourceLabels {
-		log.Println("[INFO] creating target label: ", v.Name)
-		if err = apiClient.LabelPost(targetAuthor, targetRepo, &v); err != nil {
-			log.Println("[ERROR]: ", err)
-			return
-		}
-	}
-	log.Printf("[SUCCESS] completed cloning labels from: %s/%s to %s/%s\n", sourceAuthor, sourceRepo, targetAuthor, targetRepo)
 }
