@@ -19,3 +19,7 @@ gh-labels
 
 # generated files
 mocks
+
+# mac os
+.DS_Store
+

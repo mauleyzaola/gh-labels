@@ -37,6 +37,7 @@ func (x *Client) genResponse(method, endpoint string, payload []byte, statusCode
 	}
 	req.Header.Set("Authorization", "token "+x.token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	res, err := x.client.Do(req)
 	if err != nil {
 		return nil, err
