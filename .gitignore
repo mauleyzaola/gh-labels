@@ -16,3 +16,6 @@ gh-labels
 
 # IDE files
 .idea
+
+# generated files
+mocks
