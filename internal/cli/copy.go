@@ -32,7 +32,7 @@ func CopyLabels(client interfaces.Client, src, dst types.RepoInfo) error {
 	log.Printf("[INFO] creating target labels: %s/%s\n", dst.Username, dst.Repository)
 	for _, v := range sourceLabels {
 		log.Println("[INFO] creating target label: ", v.Name)
-		if err = client.Create(dst, v); err != nil {
+		if _, err = client.Create(dst, v); err != nil {
 			return err
 		}
 	}

@@ -16,11 +16,11 @@ type Client struct {
 	token  string
 }
 
-func New(token string) (*Client, error) {
+func New(token string) *Client {
 	return &Client{
 		client: &http.Client{},
 		token:  token,
-	}, nil
+	}
 }
 
 func (x *Client) genResponse(method, endpoint string, payload []byte, statusCode int) (*http.Response, error) {
@@ -63,21 +63,22 @@ func (x *Client) List(info types.RepoInfo) ([]types.Label, error) {
 	return result, nil
 }
 
-func (x *Client) Create(dst types.RepoInfo, label types.Label) error {
+func (x *Client) Create(dst types.RepoInfo, label types.Label) (*types.Label, error) {
 	payload, err := json.Marshal(label)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	res, err := x.genResponse(http.MethodPost,
 		"repos/"+dst.Username+"/"+dst.Repository+"/labels",
 		payload, http.StatusCreated)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() { _ = res.Body.Close() }()
-
-	// TODO: report this bug to GH, description is not getting there
-	return json.NewDecoder(res.Body).Decode(&label)
+	if err := json.NewDecoder(res.Body).Decode(&label); err != nil {
+		return nil, err
+	}
+	return &label, nil
 }
 
 func (x *Client) Delete(dst types.RepoInfo, labelName string) error {
