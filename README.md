@@ -2,7 +2,7 @@
 
 Simple utility to copy labels from one GH repo to another
 
-![demo](https://github.com/user-attachments/assets/7aa943be-f355-477a-8184-b3f4da57ff82)
+![demo](./assets/demo.gif)
 
 
 Works like this:
@@ -24,7 +24,7 @@ I created this program because I am lazy, and it takes a while to copy/paste one
 ## Installation
 
 ```
-go get github.com/mauleyzaola/gh-labels
+go install github.com/mauleyzaola/gh-labels@latest
 ```
 
 Program uses go modules, but should work on older golang versions. I only have tested it to work with `go1.3`
@@ -42,7 +42,7 @@ Only these options are needed for this program to work
 Example: Cloning the labels from https://github.com/facebook/react to https://github.com/mauleyzaola/garbage
 
 ```
-TOKEN=708d25ca4ada98869528b6ab17933ca5c4c40dce gh-labels \
+TOKEN=xxxxx gh-labels \
     -source facebook/react \
     -target mauleyzaola/garbage
 ```
@@ -52,5 +52,5 @@ Here is asciinema recording of the output: https://asciinema.org/a/9wsdKLCEoIZg0
 ## TODO
 
 * GH API apparently does not write the `description` field. Haven't figured it out yet.
-* Get all the labels from repositories. Currently there is a limit of 30 items. Undocumented in the API afaik.
+* Get all the labels from repositories. Using default 30 labels for the time being.
 * Make this program more intelligent (don't wipe all, but just add the missing ones).

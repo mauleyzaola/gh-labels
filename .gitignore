@@ -16,3 +16,10 @@ gh-labels
 
 # IDE files
 .idea
+
+# generated files
+mocks
+
+# mac os
+.DS_Store
+
